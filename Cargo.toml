@@ -1,0 +1,15 @@
+[package]
+name = "fcsv"
+version = "0.1.0"
+authors = ["Hideo Hattori <hhatto.jp@gmail.com>"]
+
+[lib]
+name = "csv"
+crate-type = ["cdylib"]
+
+[dependencies]
+csv = "1.0.0-beta.5"
+
+[dependencies.pyo3]
+version = "0.2"
+features = ["extension-module"]
