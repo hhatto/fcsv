@@ -4,13 +4,19 @@ extern crate csv;
 extern crate pyo3;
 
 use std::fs;
-use std::io::BufWriter;
-use csv::{QuoteStyle, WriterBuilder};
+use std::io::{BufReader, BufWriter};
+use csv::{QuoteStyle, WriterBuilder, ReaderBuilder};
 use pyo3::prelude::*;
 
 #[py::class]
 struct Writer {
     _wtr: csv::Writer<BufWriter<fs::File>>,
+    token: PyToken,
+}
+
+#[py::class]
+struct Reader {
+    _rdr: csv::Reader<BufReader<fs::File>>,
     token: PyToken,
 }
 
@@ -61,9 +67,40 @@ impl Writer {
     }
 }
 
+#[py::methods]
+impl Reader {
+    #[new]
+    fn __new__(obj: &PyRawObject, path: String) -> PyResult<()> {
+        let fp = BufReader::new(fs::File::open(path.as_str()).expect("fail create file"));
+        let rdr = ReaderBuilder::new()
+            .has_headers(false)
+            .from_reader(fp);
+        obj.init(|t| Reader {
+            _rdr: rdr,
+            token: t,
+        })
+    }
+
+    fn read(&mut self, py: Python) -> PyResult<PyObject> {
+        let mut result = vec![];
+        for x in self._rdr.records() {
+            let mut v = vec![];
+            for xx in x.iter() {
+                for xxx in xx.iter() {
+                v.push(PyString::new(py, xxx));
+                }
+            }
+            result.push(v.to_object(py));
+        }
+        let obj = result.to_object(py);
+        Ok(obj)
+    }
+}
+
 #[py::modinit(fcsv)]
 fn init_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Writer>()?;
+    m.add_class::<Reader>()?;
 
     Ok(())
 }
