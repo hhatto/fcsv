@@ -43,6 +43,7 @@ impl Writer {
         };
         let fp = BufWriter::new(fs::File::create(path.as_str()).expect("fail create file"));
         let wtr = WriterBuilder::new()
+            .flexible(true)
             .quote_style(QuoteStyle::NonNumeric)
             .delimiter(delimiter)
             .from_writer(fp);
@@ -108,6 +109,7 @@ impl Reader {
         };
         let fp = BufReader::new(fs::File::open(path.as_str()).expect("fail create file"));
         let rdr = ReaderBuilder::new()
+            .flexible(true)
             .has_headers(false)
             .delimiter(delimiter)
             .from_reader(fp);
