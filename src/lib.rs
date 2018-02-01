@@ -5,7 +5,7 @@ extern crate pyo3;
 
 use std::fs;
 use std::io::{BufReader, BufWriter};
-use csv::{QuoteStyle, WriterBuilder, ReaderBuilder};
+use csv::{QuoteStyle, ReaderBuilder, WriterBuilder};
 use pyo3::prelude::*;
 
 #[py::class]
@@ -23,10 +23,28 @@ struct Reader {
 #[py::methods]
 impl Writer {
     #[new]
-    fn __new__(obj: &PyRawObject, path: String) -> PyResult<()> {
+    #[args(path, args = "*", kwargs = "**")]
+    fn __new__(obj: &PyRawObject, path: String, _args: Option<&PyTuple>, kwargs: Option<&PyDict>) -> PyResult<()> {
+        let delimiter = if kwargs.is_some() {
+            // TODO: use macro
+            let kwargs = kwargs.unwrap();
+            match kwargs.get_item("delimiter") {
+                Some(x) => {
+                    String::from(
+                        PyString::try_from(x)
+                            .expect("fail from_object")
+                            .to_string_lossy(),
+                    ).as_bytes()[0]
+                }
+                None => b',',
+            }
+        } else {
+            b','
+        };
         let fp = BufWriter::new(fs::File::create(path.as_str()).expect("fail create file"));
         let wtr = WriterBuilder::new()
             .quote_style(QuoteStyle::NonNumeric)
+            .delimiter(delimiter)
             .from_writer(fp);
         obj.init(|t| Writer {
             _wtr: wtr,
@@ -70,10 +88,28 @@ impl Writer {
 #[py::methods]
 impl Reader {
     #[new]
-    fn __new__(obj: &PyRawObject, path: String) -> PyResult<()> {
+    #[args(path, args = "*", kwargs = "**")]
+    fn __new__(obj: &PyRawObject, path: String, _args: Option<&PyTuple>, kwargs: Option<&PyDict>) -> PyResult<()> {
+        let delimiter = if kwargs.is_some() {
+            // TODO: use macro
+            let kwargs = kwargs.unwrap();
+            match kwargs.get_item("delimiter") {
+                Some(x) => {
+                    String::from(
+                        PyString::try_from(x)
+                            .expect("fail from_object")
+                            .to_string_lossy(),
+                    ).as_bytes()[0]
+                }
+                None => b',',
+            }
+        } else {
+            b','
+        };
         let fp = BufReader::new(fs::File::open(path.as_str()).expect("fail create file"));
         let rdr = ReaderBuilder::new()
             .has_headers(false)
+            .delimiter(delimiter)
             .from_reader(fp);
         obj.init(|t| Reader {
             _rdr: rdr,
@@ -87,7 +123,7 @@ impl Reader {
             let mut v = vec![];
             for xx in x.iter() {
                 for xxx in xx.iter() {
-                v.push(PyString::new(py, xxx));
+                    v.push(PyString::new(py, xxx));
                 }
             }
             result.push(v.to_object(py));
