@@ -5,7 +5,7 @@ extern crate pyo3;
 
 use std::fs;
 use std::io::{BufReader, BufWriter};
-use csv::{QuoteStyle, ReaderBuilder, WriterBuilder};
+use csv::{QuoteStyle, ReaderBuilder, WriterBuilder, Terminator};
 use pyo3::prelude::*;
 
 #[py::class]
@@ -44,6 +44,7 @@ impl Writer {
         let fp = BufWriter::new(fs::File::create(path.as_str()).expect("fail create file"));
         let wtr = WriterBuilder::new()
             .flexible(true)
+            .terminator(Terminator::CRLF)
             .quote_style(QuoteStyle::NonNumeric)
             .delimiter(delimiter)
             .from_writer(fp);
@@ -110,6 +111,7 @@ impl Reader {
         let fp = BufReader::new(fs::File::open(path.as_str()).expect("fail create file"));
         let rdr = ReaderBuilder::new()
             .flexible(true)
+            .terminator(Terminator::CRLF)
             .has_headers(false)
             .delimiter(delimiter)
             .from_reader(fp);
