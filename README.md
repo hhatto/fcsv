@@ -20,4 +20,4 @@ $ pip install --upgrade git+https://github.com/hhatto/fcsv
 ```
 
 
-[benchmark](https://gist.github.com/hhatto/ce18792c3817c1ad67a7d4d8fe09ef5f)
+[benchmark](https://gist.github.com/hhatto/a101f904e516c0ea8519cc5a50fcf586)
