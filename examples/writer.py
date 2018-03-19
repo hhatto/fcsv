@@ -1,12 +1,21 @@
-import time
 import fcsv
 
 
-while True:
+def write_list():
     writer = fcsv.Writer('v.csv')
-    writer.writerow(("hoge", "ゔぃ", "fuga"))
+    writer.writerow(("Hello", "こんにちは", "csv"))
     writer.writerows((
-        ("hoge", "ゔぃ", "fuga"),
-        ("v1", "v2", "v9"),
-    ))
-    # time.sleep(0.1)
+        ("Hello1", "こんにちは1", "csv1"),
+        ("World2", "せかい2", "csv2"),
+        ))
+
+def write_tuple():
+    writer = fcsv.Writer('v.csv')
+    writer.writerow(["Hello", "こんにちは", "csv"])
+    writer.writerows([
+        ["Hello1", "こんにちは1", "csv1"],
+        ("World2", "せかい2", "csv2"),
+        ])
+
+write_list()
+write_tuple()
