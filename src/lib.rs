@@ -54,13 +54,14 @@ impl Writer {
         })
     }
 
-    fn writerow(&mut self, _py: Python, arg: &PyTuple) -> PyResult<()> {
-        for x in arg.iter() {
+    fn writerow(&mut self, py: Python, arg: PyObject) -> PyResult<()> {
+        let itero = PyIterator::from_object(py, &arg).expect("fail get iter");
+        for x in itero {
             let _ = self._wtr.write_field(String::from(
-                PyString::try_from(x.as_ref())
+                    PyString::try_from(x.unwrap())
                     .expect("fail from_object")
                     .to_string_lossy(),
-            ));
+                    ));
         }
         let _ = self._wtr
             .write_record(None::<&[u8]>)
@@ -68,9 +69,10 @@ impl Writer {
         Ok(())
     }
 
-    fn writerows(&mut self, _py: Python, args: &PyTuple) -> PyResult<()> {
-        for arg in args.iter() {
-            let v = PyIterator::from_object(_py, arg).expect("fail get iter");
+    fn writerows(&mut self, py: Python, args: PyObject) -> PyResult<()> {
+        let itero = PyIterator::from_object(py, &args).expect("fail get iter");
+        for arg in itero {
+            let v = PyIterator::from_object(py, arg.unwrap()).expect("fail get iter");
             for item in v {
                 let sitem = item.unwrap();
                 let _ = self._wtr.write_field(String::from(
