@@ -124,14 +124,14 @@ impl Reader {
     }
 
     fn read(&mut self, py: Python) -> PyResult<PyObject> {
-        let mut result = vec![];
+        let cnt = self._rdr.records().count();
+        let mut result = Vec::with_capacity(cnt);
         for x in self._rdr.records() {
             let mut v = vec![];
-            for xx in x.iter() {
+            let xx = x.unwrap();
                 for xxx in xx.iter() {
                     v.push(PyString::new(py, xxx));
                 }
-            }
             result.push(v.to_object(py));
         }
         let obj = result.to_object(py);
