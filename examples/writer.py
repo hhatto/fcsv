@@ -2,7 +2,7 @@ import fcsv
 
 
 def write_list():
-    writer = fcsv.Writer('v.csv')
+    writer = fcsv.writer('v.csv')
     writer.writerow(("Hello", "こんにちは", "csv"))
     writer.writerows((
         ("Hello1", "こんにちは1", "csv1"),
@@ -11,7 +11,7 @@ def write_list():
 
 
 def write_tuple():
-    writer = fcsv.Writer('v.csv')
+    writer = fcsv.writer('v.csv')
     writer.writerow(["Hello", "こんにちは", "csv"])
     writer.writerows([
         ["Hello1", "こんにちは1", "csv1"],

@@ -51,7 +51,7 @@ with Benchmarker(NUM, width=40) as bench:
     @bench("fcsv.writerow")
     def b_fcsv_writerow(bm):
         for i in bm:
-            writer = fcsv.Writer('b_fcsv.csv')  # , quoting=csv.QUOTE_NONNUMERIC)
+            writer = fcsv.writer('b_fcsv.csv')  # , quoting=csv.QUOTE_NONNUMERIC)
             writer.writerow(source[0])
             writer.writerow(source[1])
             writer.writerow(source[2])
@@ -59,7 +59,7 @@ with Benchmarker(NUM, width=40) as bench:
     @bench("fcsv.writerows")
     def b_fcsv_writerows(bm):
         for i in bm:
-            writer = fcsv.Writer('b_fcsv.csv')  # , quoting=csv.QUOTE_NONNUMERIC)
+            writer = fcsv.writer('b_fcsv.csv')  # , quoting=csv.QUOTE_NONNUMERIC)
             writer.writerows(source)
 
 
@@ -91,7 +91,7 @@ with Benchmarker(NUM, width=40) as bench:
     @bench("fcsv.reader.10m")
     def b_fcsv_reader(bm):
         for i in bm:
-            reader = fcsv.Reader('b_reader.csv')  # , quoting=csv.QUOTE_NONNUMERIC)
+            reader = fcsv.reader('b_reader.csv')  # , quoting=csv.QUOTE_NONNUMERIC)
             for row in reader:
                 _ = row
 
@@ -131,7 +131,7 @@ with Benchmarker(NUM, width=40) as bench:
     @bench("fcsv.reader.100m")
     def b_fcsv_reader(bm):
         for i in bm:
-            reader = fcsv.Reader(large_csv_file.name)  # , quoting=csv.QUOTE_NONNUMERIC)
+            reader = fcsv.reader(large_csv_file.name)  # , quoting=csv.QUOTE_NONNUMERIC)
             for row in reader:
                 _ = row
 

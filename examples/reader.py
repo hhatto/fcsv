@@ -16,7 +16,7 @@ def std_read():
 
 
 def fcsv_read():
-    reader = fcsv.Reader(filename)
+    reader = fcsv.reader(filename)
     for row in reader.read():
         print(row)
 

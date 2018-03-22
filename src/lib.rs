@@ -160,7 +160,7 @@ impl PyIterProtocol for Reader {
     }
 }
 
-#[py::modinit(fcsv)]
+#[py::modinit(_fcsv)]
 fn init_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Writer>()?;
     m.add_class::<Reader>()?;
