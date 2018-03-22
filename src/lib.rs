@@ -126,12 +126,14 @@ impl Reader {
     fn read(&mut self, py: Python) -> PyResult<PyObject> {
         let cnt = self._rdr.records().count();
         let mut result = Vec::with_capacity(cnt);
+        let pos = csv::Position::new();
+        let _ = self._rdr.seek(pos);
         for x in self._rdr.records() {
             let mut v = vec![];
             let xx = x.unwrap();
-                for xxx in xx.iter() {
-                    v.push(PyString::new(py, xxx));
-                }
+            for xxx in xx.iter() {
+                v.push(PyString::new(py, xxx));
+            }
             result.push(v.to_object(py));
         }
         let obj = result.to_object(py);
