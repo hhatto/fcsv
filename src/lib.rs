@@ -141,6 +141,25 @@ impl Reader {
     }
 }
 
+#[py::proto]
+impl PyIterProtocol for Reader {
+    fn __iter__(&mut self) -> PyResult<PyObject> {
+        Ok(self.into())
+    }
+
+    fn __next__(&mut self) -> PyResult<Option<PyObject>> {
+        let mut record = csv::StringRecord::new();
+        match self._rdr.read_record(&mut record) {
+            Ok(true) => {
+                let py = self.py();
+                let v: Vec<Py<PyString>> = record.iter().map(|s| PyString::new(py, s)).collect();
+                Ok(Some(v.to_object(py)))
+            }
+            _ => Err(exc::StopIteration::new("stop")),
+        }
+    }
+}
+
 #[py::modinit(fcsv)]
 fn init_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Writer>()?;
