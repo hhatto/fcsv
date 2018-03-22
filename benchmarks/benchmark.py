@@ -4,7 +4,6 @@ import csv
 import fcsv
 import pandas as pd
 
-NUM = 500 * 1000
 NUM = 10 * 1000
 source = [["abc", "def", "ghi"],
           ["jkl", "あいう", "opq"],
