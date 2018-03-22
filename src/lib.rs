@@ -57,11 +57,9 @@ impl Writer {
     fn writerow(&mut self, py: Python, arg: PyObject) -> PyResult<()> {
         let itero = PyIterator::from_object(py, &arg).expect("fail get iter");
         for x in itero {
-            let _ = self._wtr.write_field(String::from(
-                    PyString::try_from(x.unwrap())
-                    .expect("fail from_object")
-                    .to_string_lossy(),
-                    ));
+            let x = x.unwrap();
+            let s = x.extract::<String>().unwrap();
+            let _ = self._wtr.write_field(s.as_bytes());
         }
         let _ = self._wtr
             .write_record(None::<&[u8]>)
@@ -75,11 +73,8 @@ impl Writer {
             let v = PyIterator::from_object(py, arg.unwrap()).expect("fail get iter");
             for item in v {
                 let sitem = item.unwrap();
-                let _ = self._wtr.write_field(String::from(
-                    PyString::try_from(sitem)
-                        .expect("fail from_object")
-                        .to_string_lossy(),
-                ));
+                let s = sitem.extract::<String>().unwrap();
+                let _ = self._wtr.write_field(s.as_bytes());
             }
             let _ = self._wtr
                 .write_record(None::<&[u8]>)
@@ -129,12 +124,8 @@ impl Reader {
         let pos = csv::Position::new();
         let _ = self._rdr.seek(pos);
         for x in self._rdr.records() {
-            let mut v = vec![];
             let xx = x.unwrap();
-            for xxx in xx.iter() {
-                v.push(PyString::new(py, xxx));
-            }
-            result.push(v.to_object(py));
+            result.push(xx.iter().collect::<Vec<&str>>().to_object(py));
         }
         let obj = result.to_object(py);
         Ok(obj)
@@ -152,8 +143,7 @@ impl PyIterProtocol for Reader {
         match self._rdr.read_record(&mut record) {
             Ok(true) => {
                 let py = self.py();
-                let v: Vec<Py<PyString>> = record.iter().map(|s| PyString::new(py, s)).collect();
-                Ok(Some(v.to_object(py)))
+                Ok(Some(record.iter().collect::<Vec<&str>>().to_object(py)))
             }
             _ => Err(exc::StopIteration::new("stop")),
         }
