@@ -1,7 +1,13 @@
-.PHONY: all install clean benchmark
+.PHONY: all install clean benchmark test
 
 all:
 	echo "make"
+
+test:
+	cargo test
+
+test-verbose: VERBOSE = "-v"
+test-verbose: test
 
 install:
 	python setup.py install
