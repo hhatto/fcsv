@@ -1,4 +1,4 @@
-# fcsv
+# fcsv [![](https://travis-ci.org/hhatto/fcsv.svg?branch=master)](https://travis-ci.org/hhatto/fcsv)
 yet another python csv module
 
 
