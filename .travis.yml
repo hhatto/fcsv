@@ -14,7 +14,7 @@ install:
     - make install-pip-verbose
 
 script:
-    - if [[ "$TRAVIS_PYTHON_VERSION" != "2."* ]]; make test-verbose
+    - if [[ "$TRAVIS_PYTHON_VERSION" != "2."* ]]; then make test-verbose; fi
 
 after_success:
     - make benchmark
