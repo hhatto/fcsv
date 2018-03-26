@@ -1,3 +1,4 @@
+# coding: utf-8
 from benchmarker import Benchmarker
 import os
 import tempfile

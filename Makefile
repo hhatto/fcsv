@@ -4,7 +4,7 @@ all:
 	echo "make"
 
 test:
-	cargo test
+	cd tests && python test_smoke.py $(VERBOSE)
 
 test-verbose: VERBOSE = "-v"
 test-verbose: test
