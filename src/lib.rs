@@ -8,6 +8,53 @@ use std::io::{BufReader, BufWriter};
 use csv::{QuoteStyle, ReaderBuilder, WriterBuilder, Terminator};
 use pyo3::prelude::*;
 
+
+fn pyobj2str(obj: &PyObjectRef) -> Result<String, String> {
+    match obj.extract::<String>() {
+        Ok(v) => return Ok(v),
+        Err(_) => {},
+    }
+    match obj.extract::<&PyBytes>() {
+        Ok(v) => {
+            let s = String::from_utf8(v.data().to_vec());
+            match s {
+                Err(e) => return Err(format!("undecoded data: {:?}", e)),
+                _ => {},
+            }
+            let s = s.unwrap();
+            return Ok(s);
+        },
+        Err(_) => {},
+    }
+    match obj.extract::<&PyBool>() {
+        Ok(v) => {
+            if v.is_true() {
+                return Ok("True".to_string());
+            } else {
+                return Ok("False".to_string());
+            }
+        }
+        Err(_) => {},
+    }
+    match obj.extract::<f64>() {
+        Ok(v) => {
+            return Ok(format!("{}", v));
+        },
+        Err(_) => {},
+    }
+    match obj.extract::<i64>() {
+        Ok(v) => {
+            return Ok(format!("{}", v));
+        },
+        Err(_) => {},
+    }
+    if obj.is_none() {
+        return Ok("".to_string());
+    }
+
+    Err("invalid field type".to_string())
+}
+
 #[py::class]
 struct Writer {
     _wtr: csv::Writer<BufWriter<fs::File>>,
@@ -23,19 +70,12 @@ struct Reader {
 #[py::methods]
 impl Writer {
     #[new]
-    #[args(path, args = "*", kwargs = "**")]
-    fn __new__(obj: &PyRawObject, path: String, _args: Option<&PyTuple>, kwargs: Option<&PyDict>) -> PyResult<()> {
+    #[args(path, kwargs="**")]
+    fn __new__(obj: &PyRawObject, path: String, kwargs: Option<&PyDict>) -> PyResult<()> {
         let delimiter = if kwargs.is_some() {
-            // TODO: use macro
-            let kwargs = kwargs.unwrap();
+            let kwargs = kwargs.expect("hoge");
             match kwargs.get_item("delimiter") {
-                Some(x) => {
-                    String::from(
-                        PyString::try_from(x)
-                            .expect("fail from_object")
-                            .to_string_lossy(),
-                    ).as_bytes()[0]
-                }
+                Some(x) => x.extract::<String>().expect("fuga").as_bytes()[0],
                 None => b',',
             }
         } else {
@@ -45,7 +85,7 @@ impl Writer {
         let wtr = WriterBuilder::new()
             .flexible(true)
             .terminator(Terminator::CRLF)
-            .quote_style(QuoteStyle::NonNumeric)
+            .quote_style(QuoteStyle::Necessary)
             .delimiter(delimiter)
             .from_writer(fp);
         obj.init(|t| Writer {
@@ -57,13 +97,18 @@ impl Writer {
     fn writerow(&mut self, py: Python, arg: PyObject) -> PyResult<()> {
         let itero = PyIterator::from_object(py, &arg).expect("fail get iter");
         for x in itero {
-            let x = x.unwrap();
-            let s = x.extract::<String>().unwrap();
-            let _ = self._wtr.write_field(s.as_bytes());
+            let x = x.expect("invalid data");
+            match pyobj2str(x) {
+                Ok(s) => {
+                    let _ = self._wtr.write_field(s.as_bytes());
+                },
+                Err(_) => panic!("invalid type"), /* TODO: handle error */
+            }
         }
         let _ = self._wtr
             .write_record(None::<&[u8]>)
             .expect("fail write none record");
+        self._wtr.flush()?;
         Ok(())
     }
 
@@ -73,13 +118,18 @@ impl Writer {
             let v = PyIterator::from_object(py, arg.unwrap()).expect("fail get iter");
             for item in v {
                 let sitem = item.unwrap();
-                let s = sitem.extract::<String>().unwrap();
-                let _ = self._wtr.write_field(s.as_bytes());
+                match pyobj2str(sitem) {
+                    Ok(s) => {
+                        let _ = self._wtr.write_field(s.as_bytes());
+                    },
+                    Err(_) => panic!("invalid type"), /* TODO: handle error */
+                }
             }
             let _ = self._wtr
                 .write_record(None::<&[u8]>)
                 .expect("fail write none record");
         }
+        self._wtr.flush()?;
         Ok(())
     }
 }
@@ -87,19 +137,12 @@ impl Writer {
 #[py::methods]
 impl Reader {
     #[new]
-    #[args(path, args = "*", kwargs = "**")]
-    fn __new__(obj: &PyRawObject, path: String, _args: Option<&PyTuple>, kwargs: Option<&PyDict>) -> PyResult<()> {
+    #[args(path, dialect, kwargs="**")]
+    fn __new__(obj: &PyRawObject, path: String, _args: Option<PyObject>, kwargs: Option<&PyDict>) -> PyResult<()> {
         let delimiter = if kwargs.is_some() {
-            // TODO: use macro
             let kwargs = kwargs.unwrap();
             match kwargs.get_item("delimiter") {
-                Some(x) => {
-                    String::from(
-                        PyString::try_from(x)
-                            .expect("fail from_object")
-                            .to_string_lossy(),
-                    ).as_bytes()[0]
-                }
+                Some(x) => x.extract::<String>().unwrap().as_bytes()[0],
                 None => b',',
             }
         } else {
