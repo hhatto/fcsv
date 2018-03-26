@@ -5,7 +5,8 @@ python:
     - "3.6"
 
 before_install:
-    - pip install setuptools_rust benchmarker unicodecsv pandas
+    - pip install setuptools_rust
+    - pip install -r benchmarks/requirements.txt
     - curl https://sh.rustup.rs -sSf | sh -s -- -y
     - export PATH="$PATH:$HOME/.cargo/bin"
     - rustup default nightly
