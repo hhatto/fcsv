@@ -70,7 +70,6 @@ struct Reader {
 #[py::methods]
 impl Writer {
     #[new]
-    #[args(path, kwargs="**")]
     fn __new__(obj: &PyRawObject, path: String, kwargs: Option<&PyDict>) -> PyResult<()> {
         let delimiter = if kwargs.is_some() {
             let kwargs = kwargs.expect("hoge");
@@ -137,8 +136,7 @@ impl Writer {
 #[py::methods]
 impl Reader {
     #[new]
-    #[args(path, dialect, kwargs="**")]
-    fn __new__(obj: &PyRawObject, path: String, _args: Option<PyObject>, kwargs: Option<&PyDict>) -> PyResult<()> {
+    fn __new__(obj: &PyRawObject, path: String, kwargs: Option<&PyDict>) -> PyResult<()> {
         let delimiter = if kwargs.is_some() {
             let kwargs = kwargs.unwrap();
             match kwargs.get_item("delimiter") {
@@ -148,7 +146,13 @@ impl Reader {
         } else {
             b','
         };
-        let fp = BufReader::new(fs::File::open(path.as_str()).expect("fail create file"));
+        let f = fs::File::open(path.as_str());
+        match f {
+            Err(e) => return Err(exc::IOError::new(format!("{:?}", e))),
+            _ => {}
+        }
+        let f = f.unwrap();
+        let fp = BufReader::new(f);
         let rdr = ReaderBuilder::new()
             .flexible(true)
             .terminator(Terminator::CRLF)
