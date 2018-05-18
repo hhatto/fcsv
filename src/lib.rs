@@ -7,6 +7,10 @@ use std::fs;
 use std::io::{BufReader, BufWriter};
 use csv::{QuoteStyle, ReaderBuilder, WriterBuilder, Terminator};
 use pyo3::prelude::*;
+use pyo3::py::class as pyclass;
+use pyo3::py::methods as pymethods;
+use pyo3::py::proto as pyproto;
+use pyo3::py::modinit as pymodinit;
 
 
 fn pyobj2str(obj: &PyObjectRef) -> Result<String, String> {
@@ -55,19 +59,19 @@ fn pyobj2str(obj: &PyObjectRef) -> Result<String, String> {
     Err("invalid field type".to_string())
 }
 
-#[py::class]
+#[pyclass]
 struct Writer {
     _wtr: csv::Writer<BufWriter<fs::File>>,
     token: PyToken,
 }
 
-#[py::class]
+#[pyclass]
 struct Reader {
     _rdr: csv::Reader<BufReader<fs::File>>,
     token: PyToken,
 }
 
-#[py::methods]
+#[pymethods]
 impl Writer {
     #[new]
     fn __new__(obj: &PyRawObject, path: String, kwargs: Option<&PyDict>) -> PyResult<()> {
@@ -133,7 +137,7 @@ impl Writer {
     }
 }
 
-#[py::methods]
+#[pymethods]
 impl Reader {
     #[new]
     fn __new__(obj: &PyRawObject, path: String, kwargs: Option<&PyDict>) -> PyResult<()> {
@@ -179,7 +183,7 @@ impl Reader {
     }
 }
 
-#[py::proto]
+#[pyproto]
 impl PyIterProtocol for Reader {
     fn __iter__(&mut self) -> PyResult<PyObject> {
         Ok(self.into())
@@ -197,7 +201,7 @@ impl PyIterProtocol for Reader {
     }
 }
 
-#[py::modinit(_fcsv)]
+#[pymodinit(_fcsv)]
 fn init_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Writer>()?;
     m.add_class::<Reader>()?;
