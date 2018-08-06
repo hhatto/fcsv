@@ -1,16 +1,13 @@
-#![feature(proc_macro, specialization)]
+#![feature(use_extern_macros, specialization)]
 
 extern crate csv;
+#[macro_use]
 extern crate pyo3;
 
 use std::fs;
 use std::io::{BufReader, BufWriter};
 use csv::{QuoteStyle, ReaderBuilder, WriterBuilder, Terminator};
 use pyo3::prelude::*;
-use pyo3::py::class as pyclass;
-use pyo3::py::methods as pymethods;
-use pyo3::py::proto as pyproto;
-use pyo3::py::modinit as pymodinit;
 
 
 fn pyobj2str(obj: &PyObjectRef) -> Result<String, String> {
@@ -76,9 +73,9 @@ impl Writer {
     #[new]
     fn __new__(obj: &PyRawObject, path: String, kwargs: Option<&PyDict>) -> PyResult<()> {
         let delimiter = if kwargs.is_some() {
-            let kwargs = kwargs.expect("hoge");
+            let kwargs = kwargs.expect("kwargs parse error");
             match kwargs.get_item("delimiter") {
-                Some(x) => x.extract::<String>().expect("fuga").as_bytes()[0],
+                Some(x) => x.extract::<String>().expect("fail to new writer object").as_bytes()[0],
                 None => b',',
             }
         } else {
