@@ -1,13 +1,14 @@
 #![feature(specialization)]
 
 extern crate csv;
-#[macro_use]
 extern crate pyo3;
 
 use std::fs;
 use std::io::{BufReader, BufWriter};
 use csv::{QuoteStyle, ReaderBuilder, WriterBuilder, Terminator};
 use pyo3::prelude::*;
+use pyo3::types::{PyBytes, PyBool, PyDict, PyIterator, PyObjectRef, exceptions};
+use pyo3::class::PyIterProtocol;
 
 
 fn pyobj2str(obj: &PyObjectRef) -> Result<String, String> {
@@ -17,7 +18,7 @@ fn pyobj2str(obj: &PyObjectRef) -> Result<String, String> {
     }
     match obj.extract::<&PyBytes>() {
         Ok(v) => {
-            let s = String::from_utf8(v.data().to_vec());
+            let s = String::from_utf8(v.as_bytes().to_vec());
             match s {
                 Err(e) => return Err(format!("undecoded data: {:?}", e)),
                 _ => {},
@@ -149,7 +150,7 @@ impl Reader {
         };
         let f = fs::File::open(path.as_str());
         match f {
-            Err(e) => return Err(exc::IOError::new(format!("{:?}", e))),
+            Err(e) => return Err(exceptions::IOError::py_err(format!("{:?}", e))),
             _ => {}
         }
         let f = f.unwrap();
@@ -190,10 +191,11 @@ impl PyIterProtocol for Reader {
         let mut record = csv::StringRecord::new();
         match self._rdr.read_record(&mut record) {
             Ok(true) => {
-                let py = self.py();
+                let gil = Python::acquire_gil();
+                let py = gil.python();
                 Ok(Some(record.iter().collect::<Vec<&str>>().to_object(py)))
             }
-            _ => Err(exc::StopIteration::new("stop")),
+            _ => Err(exceptions::StopIteration::py_err("stop")),
         }
     }
 }
