@@ -1,17 +1,12 @@
-#![feature(specialization)]
-
-extern crate csv;
-extern crate pyo3;
-
 use std::fs;
 use std::io::{BufReader, BufWriter};
 use csv::{QuoteStyle, ReaderBuilder, WriterBuilder, Terminator};
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyBool, PyDict, PyIterator, PyObjectRef, exceptions};
-use pyo3::class::PyIterProtocol;
+use pyo3::types::{PyBytes, PyBool, PyDict, PyIterator};
+use pyo3::exceptions;
 
 
-fn pyobj2str(obj: &PyObjectRef) -> Result<String, String> {
+fn pyobj2str(obj: &PyAny) -> Result<String, String> {
     match obj.extract::<String>() {
         Ok(v) => return Ok(v),
         Err(_) => {},
@@ -60,19 +55,17 @@ fn pyobj2str(obj: &PyObjectRef) -> Result<String, String> {
 #[pyclass]
 struct Writer {
     _wtr: csv::Writer<BufWriter<fs::File>>,
-    token: PyToken,
 }
 
 #[pyclass]
 struct Reader {
     _rdr: csv::Reader<BufReader<fs::File>>,
-    token: PyToken,
 }
 
 #[pymethods]
 impl Writer {
     #[new]
-    fn __new__(obj: &PyRawObject, path: String, kwargs: Option<&PyDict>) -> PyResult<()> {
+    fn __new__(path: String, kwargs: Option<&PyDict>) -> PyResult<Self> {
         let delimiter = if kwargs.is_some() {
             let kwargs = kwargs.expect("kwargs parse error");
             match kwargs.get_item("delimiter") {
@@ -89,10 +82,7 @@ impl Writer {
             .quote_style(QuoteStyle::Necessary)
             .delimiter(delimiter)
             .from_writer(fp);
-        obj.init(|t| Writer {
-            _wtr: wtr,
-            token: t,
-        })
+        Ok(Writer { _wtr: wtr })
     }
 
     fn writerow(&mut self, py: Python, arg: PyObject) -> PyResult<()> {
@@ -138,7 +128,7 @@ impl Writer {
 #[pymethods]
 impl Reader {
     #[new]
-    fn __new__(obj: &PyRawObject, path: String, kwargs: Option<&PyDict>) -> PyResult<()> {
+    fn __new__(path: String, kwargs: Option<&PyDict>) -> PyResult<Self> {
         let delimiter = if kwargs.is_some() {
             let kwargs = kwargs.unwrap();
             match kwargs.get_item("delimiter") {
@@ -150,7 +140,7 @@ impl Reader {
         };
         let f = fs::File::open(path.as_str());
         match f {
-            Err(e) => return Err(exceptions::IOError::py_err(format!("{:?}", e))),
+            Err(e) => return Err(exceptions::PyIOError::new_err(format!("{:?}", e))),
             _ => {}
         }
         let f = f.unwrap();
@@ -161,10 +151,23 @@ impl Reader {
             .has_headers(false)
             .delimiter(delimiter)
             .from_reader(fp);
-        obj.init(|t| Reader {
-            _rdr: rdr,
-            token: t,
-        })
+        Ok(Reader { _rdr: rdr })
+    }
+
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(&mut self) -> PyResult<Option<PyObject>> {
+        let mut record = csv::StringRecord::new();
+        match self._rdr.read_record(&mut record) {
+            Ok(true) => {
+                let gil = Python::acquire_gil();
+                let py = gil.python();
+                Ok(Some(record.iter().collect::<Vec<&str>>().to_object(py)))
+            }
+            _ => Err(exceptions::PyStopIteration::new_err("stop")),
+        }
     }
 
     fn read(&mut self, py: Python) -> PyResult<PyObject> {
@@ -181,26 +184,8 @@ impl Reader {
     }
 }
 
-#[pyproto]
-impl PyIterProtocol for Reader {
-    fn __iter__(&mut self) -> PyResult<PyObject> {
-        Ok(self.into())
-    }
-
-    fn __next__(&mut self) -> PyResult<Option<PyObject>> {
-        let mut record = csv::StringRecord::new();
-        match self._rdr.read_record(&mut record) {
-            Ok(true) => {
-                let gil = Python::acquire_gil();
-                let py = gil.python();
-                Ok(Some(record.iter().collect::<Vec<&str>>().to_object(py)))
-            }
-            _ => Err(exceptions::StopIteration::py_err("stop")),
-        }
-    }
-}
-
-#[pymodinit(_fcsv)]
+#[pymodule]
+#[pyo3(name = "_fcsv")]
 fn init_mod(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Writer>()?;
     m.add_class::<Reader>()?;
