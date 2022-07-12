@@ -8,8 +8,8 @@ name = "csv"
 crate-type = ["cdylib"]
 
 [dependencies]
-csv = "1.0"
+csv = "1.1"
 
 [dependencies.pyo3]
-version = "0.5.2"
+version = "0.16.5"
 features = ["extension-module"]
