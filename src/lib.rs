@@ -1,6 +1,3 @@
-extern crate csv;
-extern crate pyo3;
-
 use std::fs;
 use std::io::{BufReader, BufWriter};
 use csv::{QuoteStyle, ReaderBuilder, WriterBuilder, Terminator};
