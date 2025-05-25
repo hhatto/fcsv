@@ -4,7 +4,7 @@ all:
 	echo "make"
 
 test:
-	cd tests && python test_smoke.py $(VERBOSE)
+	uv run --directory tests python test_smoke.py
 
 test-verbose: VERBOSE = "-v"
 test-verbose: test
@@ -19,4 +19,4 @@ clean:
 	rm -rf target *.egg-info dist build */__pycache__
 
 benchmark:
-	uv run --directory tests python test_smoke.py
+	uv run --directory benchmarks python benchmark.py
