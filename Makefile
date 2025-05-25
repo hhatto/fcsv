@@ -10,20 +10,13 @@ test-verbose: VERBOSE = "-v"
 test-verbose: test
 
 setup:
-	pip install maturin
+	uv sync --all-groups
 
 install:
-	maturin develop
-
-install-pip:
-	pip install --upgrade . $(VERBOSE)
-
-install-pip-verbose: VERBOSE = "-v"
-install-pip-verbose: install-pip
+	uv run maturin develop
 
 clean:
-	python setup.py clean
-	rm -rf *.egg-info dist build */__pycache__
+	rm -rf target *.egg-info dist build */__pycache__
 
 benchmark:
 	cd benchmarks && python benchmark.py
