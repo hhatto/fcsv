@@ -6,12 +6,12 @@ use pyo3::types::{PyBytes, PyBool, PyDict, PyIterator};
 use pyo3::exceptions;
 
 
-fn pyobj2str(obj: &PyAny) -> Result<String, String> {
+fn pyobj2str(obj: &Bound<'_, PyAny>) -> Result<String, String> {
     match obj.extract::<String>() {
         Ok(v) => return Ok(v),
         Err(_) => {},
     }
-    match obj.extract::<&PyBytes>() {
+    match obj.downcast::<PyBytes>() {
         Ok(v) => {
             let s = String::from_utf8(v.as_bytes().to_vec());
             match s {
@@ -23,7 +23,7 @@ fn pyobj2str(obj: &PyAny) -> Result<String, String> {
         },
         Err(_) => {},
     }
-    match obj.extract::<&PyBool>() {
+    match obj.downcast::<PyBool>() {
         Ok(v) => {
             if v.is_true() {
                 return Ok("True".to_string());
@@ -65,10 +65,10 @@ struct Reader {
 #[pymethods]
 impl Writer {
     #[new]
-    fn __new__(path: String, kwargs: Option<&PyDict>) -> PyResult<Self> {
+    fn __new__(path: String, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let delimiter = if kwargs.is_some() {
             let kwargs = kwargs.expect("kwargs parse error");
-            match kwargs.get_item("delimiter") {
+            match kwargs.get_item("delimiter")? {
                 Some(x) => x.extract::<String>().expect("fail to new writer object").as_bytes()[0],
                 None => b',',
             }
@@ -85,11 +85,11 @@ impl Writer {
         Ok(Writer { _wtr: wtr })
     }
 
-    fn writerow(&mut self, py: Python, arg: PyObject) -> PyResult<()> {
-        let itero = PyIterator::from_object(py, &arg).expect("fail get iter");
+    fn writerow(&mut self, arg: &Bound<'_, PyAny>) -> PyResult<()> {
+        let itero = PyIterator::from_object(arg).expect("fail get iter");
         for x in itero {
             let x = x.expect("invalid data");
-            match pyobj2str(x) {
+            match pyobj2str(&x) {
                 Ok(s) => {
                     let _ = self._wtr.write_field(s.as_bytes());
                 },
@@ -103,13 +103,13 @@ impl Writer {
         Ok(())
     }
 
-    fn writerows(&mut self, py: Python, args: PyObject) -> PyResult<()> {
-        let itero = PyIterator::from_object(py, &args).expect("fail get iter");
+    fn writerows(&mut self, args: &Bound<'_, PyAny>) -> PyResult<()> {
+        let itero = PyIterator::from_object(args).expect("fail get iter");
         for arg in itero {
-            let v = PyIterator::from_object(py, arg.unwrap()).expect("fail get iter");
+            let v = PyIterator::from_object(&arg.unwrap()).expect("fail get iter");
             for item in v {
                 let sitem = item.unwrap();
-                match pyobj2str(sitem) {
+                match pyobj2str(&sitem) {
                     Ok(s) => {
                         let _ = self._wtr.write_field(s.as_bytes());
                     },
@@ -128,10 +128,10 @@ impl Writer {
 #[pymethods]
 impl Reader {
     #[new]
-    fn __new__(path: String, kwargs: Option<&PyDict>) -> PyResult<Self> {
+    fn __new__(path: String, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let delimiter = if kwargs.is_some() {
             let kwargs = kwargs.unwrap();
-            match kwargs.get_item("delimiter") {
+            match kwargs.get_item("delimiter")? {
                 Some(x) => x.extract::<String>().unwrap().as_bytes()[0],
                 None => b',',
             }
@@ -158,13 +158,11 @@ impl Reader {
         slf
     }
 
-    fn __next__(&mut self) -> PyResult<Option<PyObject>> {
+    fn __next__(&mut self, py: Python<'_>) -> PyResult<Option<PyObject>> {
         let mut record = csv::StringRecord::new();
         match self._rdr.read_record(&mut record) {
             Ok(true) => {
-                let gil = Python::acquire_gil();
-                let py = gil.python();
-                Ok(Some(record.iter().collect::<Vec<&str>>().to_object(py)))
+                Ok(Some(record.iter().collect::<Vec<&str>>().into_pyobject(py)?.into_any().unbind()))
             }
             _ => Err(exceptions::PyStopIteration::new_err("stop")),
         }
@@ -177,16 +175,16 @@ impl Reader {
         let _ = self._rdr.seek(pos);
         for x in self._rdr.records() {
             let xx = x.unwrap();
-            result.push(xx.iter().collect::<Vec<&str>>().to_object(py));
+            result.push(xx.iter().collect::<Vec<&str>>().into_pyobject(py)?.into_any().unbind());
         }
-        let obj = result.to_object(py);
+        let obj = result.into_pyobject(py)?.into_any().unbind();
         Ok(obj)
     }
 }
 
 #[pymodule]
 #[pyo3(name = "_fcsv")]
-fn init_mod(_py: Python, m: &PyModule) -> PyResult<()> {
+fn init_mod(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Writer>()?;
     m.add_class::<Reader>()?;
 
