@@ -9,8 +9,11 @@ test:
 test-verbose: VERBOSE = "-v"
 test-verbose: test
 
+setup:
+	pip install maturin
+
 install:
-	python setup.py install
+	maturin develop
 
 install-pip:
 	pip install --upgrade . $(VERBOSE)
