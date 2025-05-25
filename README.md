@@ -2,17 +2,6 @@
 yet another python csv module
 
 
-## Requirements
-
-* [setuptools-rust](https://github.com/PyO3/setuptools-rust)
-* Nightly Rust
-
-```
-$ pip install setuptools_rust
-$ rustup default nightly
-```
-
-
 ## Installation
 
 ```
@@ -114,15 +103,26 @@ unicodecsv.reader.100m                      8.6436  ( 86.0) *****************
 [04] unicodecsv.reader.100m                 8.6436    86.0    98.5    99.9   100.0
 ```
 
+
 ## For Developer
 
-setup environment:
+### Requirements
+
+* [maturin](https://github.com/PyO3/maturin)
+* Rust
+
+```
+$ rustup default nightly
+```
+
+### Setup environment
 
 ```
 $ make setup
 ```
 
-build & install:
+### build & install
+
 ```
 $ make install
 ```
