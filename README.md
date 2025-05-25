@@ -114,3 +114,15 @@ unicodecsv.reader.100m                      8.6436  ( 86.0) *****************
 [04] unicodecsv.reader.100m                 8.6436    86.0    98.5    99.9   100.0
 ```
 
+## For Developer
+
+setup environment:
+
+```
+$ make setup
+```
+
+build & install:
+```
+$ make install
+```

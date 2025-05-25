@@ -1,0 +1,23 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "fcsv"
+description = "Fast CSV library"
+authors = [
+    {name = "Hideo Hattori", email = "hhatto.jp@gmail.com"}
+]
+requires-python = ">=3.10"
+dynamic = ["version"]
+
+[dependency-groups]
+dev = [
+    "benchmarker",
+    "unicodecsv",
+    "pandas",
+]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+python-packages = ["fcsv"]
