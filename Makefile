@@ -19,4 +19,4 @@ clean:
 	rm -rf target *.egg-info dist build */__pycache__
 
 benchmark:
-	cd benchmarks && python benchmark.py
+	uv run --directory tests python test_smoke.py
