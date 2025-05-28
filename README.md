@@ -1,4 +1,5 @@
-# fcsv [![](https://travis-ci.org/hhatto/fcsv.svg?branch=master)](https://travis-ci.org/hhatto/fcsv)
+# fcsv [![build](https://github.com/hhatto/fcsv/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/hhatto/fcsv/actions/workflows/ci.yml)
+
 yet another python csv module
 
 
